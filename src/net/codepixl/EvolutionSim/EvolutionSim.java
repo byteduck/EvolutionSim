@@ -30,6 +30,7 @@ public class EvolutionSim extends JPanel{
 	double timer = 0;
 	Creature mainCreature, prevCreature;
 	double timeMultiplier = 1;
+	int times = 0;
 	
 	public static void main(String[] args){
 		new EvolutionSim();
@@ -63,13 +64,33 @@ public class EvolutionSim extends JPanel{
 
 		frame.setVisible(true);
 		
+		world.addListener(new StepListener(){
+			@Override
+			public void begin(Step arg0, World arg1) {
+				
+			}
+			@Override
+			public void end(Step arg0, World arg1) {
+				
+			}
+			@Override
+			public void postSolve(Step arg0, World arg1){
+				update();
+				
+			}
+			@Override
+			public void updatePerformed(Step arg0, World arg1) {
+				// TODO Auto-generated method stub
+			}
+		});
+		
 		while(true){
+			times = 0;
 			ltime = System.nanoTime();
 			
 			mainCreature.focus(frame);
 			
 			world.update(deltaTime);
-			update();
 			
 			repaint();
 			
@@ -78,7 +99,9 @@ public class EvolutionSim extends JPanel{
 	}
 	
 	private void update(){
-		timeMultiplier = 2;
+		double rDelta = deltaTime;
+		deltaTime = 1d/60d;
+		timeMultiplier = 1;
 		for(int i = 0; i < mainCreature.muscles.length; i++)
 			mainCreature.muscles[i].update();
 		floor.getTransform().setTranslation(mainCreature.getPos().x, -22);
@@ -107,6 +130,7 @@ public class EvolutionSim extends JPanel{
 			}
 			timer = 0;
 		}
+		deltaTime = rDelta;
 	}
 
 	public void addObject(GameObject g){

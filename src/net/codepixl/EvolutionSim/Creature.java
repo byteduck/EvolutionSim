@@ -140,6 +140,10 @@ public class Creature implements Comparable{
 			g.setMass(MassType.NORMAL);
 			
 			double frict = duplicate.gameObjects[i].getFixture(0).getFriction();
+			if(frict < 1)
+				frict = 1;
+			if(frict > 3)
+				frict = 3;
 			g.color = new Color((int) ((frict-1)/2d*255),0,0);
 			f.setFriction(frict);
 		}
