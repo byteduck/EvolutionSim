@@ -22,6 +22,9 @@ public class Muscle extends DistanceJoint{
 		this.maxLength = new Random().nextDouble()*2+1;
 		this.cSpeed = new Random().nextDouble()*2+2;
 		this.eSpeed = new Random().nextDouble()*2+2; 
+		setFrequency(4);
+		setDampingRatio(0.1);
+		setDistance(2);
 	}
 	
 	//One mutation per generation. Speed mutations have a 10% chance, length mutations have a 20% chance. One mutation only. (60% chance)
@@ -59,6 +62,10 @@ public class Muscle extends DistanceJoint{
 			cSpeed = 0.1;
 		if(eSpeed <= 0)
 			eSpeed = 0.1;
+		
+		setFrequency(4);
+		setDampingRatio(0.1);
+		setDistance(2);
 	}
 	
 	public Muscle(GameObject body1, GameObject body2, Muscle duplicate, boolean b) {
@@ -67,6 +74,9 @@ public class Muscle extends DistanceJoint{
 		this.maxLength = duplicate.maxLength;
 		this.cSpeed = duplicate.cSpeed;
 		this.eSpeed = duplicate.eSpeed;
+		setFrequency(4);
+		setDampingRatio(0.1);
+		setDistance(2);
 	}
 
 	public void render(Graphics2D g){

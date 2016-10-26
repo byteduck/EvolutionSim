@@ -1,5 +1,4 @@
 package net.codepixl.EvolutionSim;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -10,6 +9,8 @@ import java.util.Collections;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import org.dyn4j.dynamics.Step;
+import org.dyn4j.dynamics.StepListener;
 import org.dyn4j.dynamics.World;
 import org.dyn4j.dynamics.joint.Joint;
 import org.dyn4j.geometry.MassType;
@@ -28,7 +29,7 @@ public class EvolutionSim extends JPanel{
 	long ltime = 0;
 	double timer = 0;
 	Creature mainCreature, prevCreature;
-	double timeMultiplier = 3;
+	double timeMultiplier = 1;
 	
 	public static void main(String[] args){
 		new EvolutionSim();
@@ -64,19 +65,20 @@ public class EvolutionSim extends JPanel{
 		
 		while(true){
 			ltime = System.nanoTime();
+			
 			mainCreature.focus(frame);
 			
 			world.update(deltaTime);
+			update();
 			
 			repaint();
-			update();
 			
 			deltaTime = ((System.nanoTime()-ltime)/1000000000d)*timeMultiplier;
 		}
 	}
 	
 	private void update(){
-		timeMultiplier = 10;
+		timeMultiplier = 2;
 		for(int i = 0; i < mainCreature.muscles.length; i++)
 			mainCreature.muscles[i].update();
 		floor.getTransform().setTranslation(mainCreature.getPos().x, -22);
@@ -97,7 +99,7 @@ public class EvolutionSim extends JPanel{
 				for(int i = cGen.size()/2; i < cGen.size(); i++)
 					cGen.set(i, new Creature(cGen.get(i-cGen.size()/2)));
 				for(int i = 0; i < cGen.size()/2; i++)
-					cGen.set(i, new Creature(cGen.get(i),false));
+					cGen.set(i, new Creature(cGen.get(i), false));
 				cCreature = 1;
 				mainCreature = cGen.get(0);
 				addCreature(mainCreature);

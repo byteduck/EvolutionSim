@@ -62,21 +62,12 @@ public class Creature implements Comparable{
 		gameObjects[2] = c;
 		
 		Muscle ja = new Muscle(a,b);
-		ja.setFrequency(4);
-		ja.setDampingRatio(0.1);
-		ja.setDistance(2);
 		muscles[0] = ja;
 		
 		Muscle jb = new Muscle(b,c);
-		jb.setFrequency(4);
-		jb.setDampingRatio(0.1);
-		jb.setDistance(2);
 		muscles[1] = jb;
 		
 		Muscle jc = new Muscle(c,a);
-		jc.setFrequency(4);
-		jc.setDampingRatio(0.1);
-		jc.setDistance(2);
 		muscles[2] = jc;
 	}
 	
@@ -91,21 +82,6 @@ public class Creature implements Comparable{
 			GameObject g = gameObjects[i];
 			GameObject mt = mutateFrom.gameObjects[i];
 			BodyFixture f = new BodyFixture(new Rectangle(0.5,0.5));
-			g.addFixture(f);
-			
-			switch(i){
-				case 0:
-					g.getTransform().setTranslation(0, -21);
-					break;
-				case 1:
-					g.getTransform().setTranslation(2, -21);
-					break;
-				case 2:
-					g.getTransform().setTranslation(1, -20);
-					break;
-			}
-			
-			g.setMass(MassType.NORMAL);
 			
 			//Mutate friction 10% chance
 			int rand = r.nextInt(10);
@@ -119,6 +95,20 @@ public class Creature implements Comparable{
 			else
 				g.color = new Color((int) ((frict-1)/2d*255),0,0);
 			f.setFriction(frict);
+			g.addFixture(f);
+			
+			switch(i){
+			case 0:
+				g.getTransform().setTranslation(0, -21);
+				break;
+			case 1:
+				g.getTransform().setTranslation(2, -21);
+				break;
+			case 2:
+				g.getTransform().setTranslation(1, -20);
+				break;
+			}
+			g.setMass(MassType.NORMAL);
 		}
 		muscles[0] = new Muscle(gameObjects[0],gameObjects[1],mutateFrom.muscles[0]);
 		muscles[1] = new Muscle(gameObjects[1],gameObjects[2],mutateFrom.muscles[1]);
@@ -129,7 +119,6 @@ public class Creature implements Comparable{
 		this.id = cID;
 		cID++;
 		gameObjects = new GameObject[duplicate.gameObjects.length];
-		muscles = new Muscle[duplicate.muscles.length];
 		for(int i = 0; i < gameObjects.length; i++){
 			gameObjects[i] = new GameObject();
 			GameObject g = gameObjects[i];
@@ -154,8 +143,7 @@ public class Creature implements Comparable{
 			g.color = new Color((int) ((frict-1)/2d*255),0,0);
 			f.setFriction(frict);
 		}
-		for(GameObject g: gameObjects)
-			System.out.println(g.getFixture(0).getFriction());
+		muscles = new Muscle[3];
 		muscles[0] = new Muscle(gameObjects[0],gameObjects[1],duplicate.muscles[0], false);
 		muscles[1] = new Muscle(gameObjects[1],gameObjects[2],duplicate.muscles[1], false);
 		muscles[2] = new Muscle(gameObjects[2],gameObjects[0],duplicate.muscles[2], false);
@@ -166,6 +154,10 @@ public class Creature implements Comparable{
 		gameObjects[0].getTransform().setTranslation(0, -21);
 		gameObjects[1].getTransform().setTranslation(2, -21);
 		gameObjects[2].getTransform().setTranslation(1, -20);
+		for(GameObject g : gameObjects){
+			g.setAngularVelocity(0);
+			g.setLinearVelocity(0,0);
+		}
 	}
 
 	public void focus(JFrame frame) {
