@@ -1,7 +1,7 @@
 package net.codepixl.EvolutionSim;
 
 import java.awt.Color;
-import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.Random;
 
 import javax.swing.JFrame;
@@ -14,7 +14,7 @@ import org.dyn4j.geometry.Vector2;
 
 public class Creature implements Comparable{
 	
-	public GameObject[] gameObjects;
+	public GameObject[] nodes;
 	public Muscle[] muscles;
 	public World world;
 	public EvolutionSim sim;
@@ -23,69 +23,64 @@ public class Creature implements Comparable{
 	
 	public static int cID = 0;
 	
+	public int numNodes = 4;
+
+	public Vector2[] oPos;
+	
 	public Creature(EvolutionSim sim){
 		this.sim = sim;
 		this.id = cID;
 		cID++;
 		Random r = new Random();
-		gameObjects = new GameObject[3];
-		muscles = new Muscle[3];
+		nodes = new GameObject[numNodes];
+		muscles = new Muscle[numNodes+numNodes*(numNodes-3)/2];
+		oPos = new Vector2[numNodes];
 		
-		GameObject a = new GameObject();
-		BodyFixture fix = new BodyFixture(new Rectangle(0.5,0.5));
-		double frict = r.nextDouble()*2+1;
-		fix.setFriction(frict);
-		a.color = new Color((int) ((frict-1)/2d*255),0,0);
-		a.addFixture(fix);
-		a.getTransform().setTranslation(0, -21);
-		a.setMass(MassType.NORMAL);
-		gameObjects[0] = a;
-		
-		GameObject b = new GameObject();
-		fix = new BodyFixture(new Rectangle(0.5,0.5));
-		frict = r.nextDouble()*2+1;
-		fix.setFriction(frict);
-		b.color = new Color((int) ((frict-1)/2d*255),0,0);
-		b.addFixture(fix);
-		b.getTransform().setTranslation(2, -21);
-		b.setMass(MassType.NORMAL);
-		gameObjects[1] = b;
-		
-		GameObject c = new GameObject();
-		fix = new BodyFixture(new Rectangle(0.5,0.5));
-		frict = r.nextDouble()*2+1;
-		fix.setFriction(frict);
-		c.color = new Color((int) ((frict-1)/2d*255),0,0);
-		c.addFixture(fix);
-		c.getTransform().setTranslation(1, -20);
-		c.setMass(MassType.NORMAL);
-		gameObjects[2] = c;
-		
-		Muscle ja = new Muscle(a,b);
-		muscles[0] = ja;
-		
-		Muscle jb = new Muscle(b,c);
-		muscles[1] = jb;
-		
-		Muscle jc = new Muscle(c,a);
-		muscles[2] = jc;
+		for(int i = 0; i < nodes.length; i++){
+			GameObject g = new GameObject();
+			BodyFixture fix = new BodyFixture(new Rectangle(0.5,0.5));
+			double frict = r.nextDouble()*2+1;
+			fix.setFriction(frict);
+			g.color = new Color((int) ((frict-1)/2d*255),0,0);
+			g.addFixture(fix);
+			Vector2 trans = new Vector2(r.nextDouble()*2-1, (r.nextDouble()*2-1)-19.5);
+			g.getTransform().setTranslation(trans);
+			oPos[i] = trans;
+			g.setMass(MassType.NORMAL);
+			nodes[i] = g;
+		}
+		int i = 0;
+		ArrayList<NodeSet> nodesDone = new ArrayList<NodeSet>();
+		for(GameObject n : nodes)
+			for(GameObject on: nodes){
+				if(on != n){
+					if(!nodesDone.contains(new NodeSet(n,on))){
+						Muscle m = new Muscle(n, on);
+						m.setDistance(m.minLength);
+						muscles[i] = m;
+						nodesDone.add(new NodeSet(n,on));
+						i++;
+					}
+				}
+			}
 	}
 	
 	public Creature(Creature mutateFrom){
 		Random r = new Random();
 		this.id = cID;
 		cID++;
-		gameObjects = new GameObject[mutateFrom.gameObjects.length];
+		nodes = new GameObject[mutateFrom.numNodes];
 		muscles = new Muscle[mutateFrom.muscles.length];
-		for(int i = 0; i < gameObjects.length; i++){
-			gameObjects[i] = new GameObject();
-			GameObject g = gameObjects[i];
-			GameObject mt = mutateFrom.gameObjects[i];
+		oPos = new Vector2[mutateFrom.oPos.length];
+		for(int i = 0; i < nodes.length; i++){
+			nodes[i] = new GameObject();
+			GameObject g = nodes[i];
+			GameObject mt = mutateFrom.nodes[i];
 			BodyFixture f = new BodyFixture(new Rectangle(0.5,0.5));
 			
 			//Mutate friction 10% chance
 			int rand = r.nextInt(10);
-			double frict = mutateFrom.gameObjects[i].getFixture(0).getFriction();
+			double frict = mutateFrom.nodes[i].getFixture(0).getFriction();
 			if(rand == 0)
 				frict+=r.nextDouble()-0.5;
 			if(frict < 1)
@@ -97,49 +92,45 @@ public class Creature implements Comparable{
 			f.setFriction(frict);
 			g.addFixture(f);
 			
-			switch(i){
-			case 0:
-				g.getTransform().setTranslation(0, -21);
-				break;
-			case 1:
-				g.getTransform().setTranslation(2, -21);
-				break;
-			case 2:
-				g.getTransform().setTranslation(1, -20);
-				break;
-			}
+			g.getTransform().setTranslation(mutateFrom.oPos[i]);
+			oPos[i] = new Vector2(mutateFrom.oPos[i]);
+			
 			g.setMass(MassType.NORMAL);
 		}
-		muscles[0] = new Muscle(gameObjects[0],gameObjects[1],mutateFrom.muscles[0]);
-		muscles[1] = new Muscle(gameObjects[1],gameObjects[2],mutateFrom.muscles[1]);
-		muscles[2] = new Muscle(gameObjects[2],gameObjects[0],mutateFrom.muscles[2]);
+		int i = 0;
+		ArrayList<NodeSet> nodesDone = new ArrayList<NodeSet>();
+		for(GameObject n : nodes)
+			for(GameObject on: nodes){
+				if(on != n){
+					if(!nodesDone.contains(new NodeSet(n,on))){
+						Muscle m = new Muscle(n, on, mutateFrom.muscles[i]);
+						m.setDistance(m.minLength);
+						muscles[i] = m;
+						nodesDone.add(new NodeSet(n,on));
+						i++;
+					}
+				}
+			}
 	}
 	
 	public Creature(Creature duplicate, boolean b) {
 		this.id = cID;
 		cID++;
-		gameObjects = new GameObject[duplicate.gameObjects.length];
-		for(int i = 0; i < gameObjects.length; i++){
-			gameObjects[i] = new GameObject();
-			GameObject g = gameObjects[i];
+		nodes = new GameObject[duplicate.nodes.length];
+		muscles = new Muscle[duplicate.muscles.length];
+		oPos = new Vector2[duplicate.oPos.length];
+		for(int i = 0; i < nodes.length; i++){
+			nodes[i] = new GameObject();
+			GameObject g = nodes[i];
 			BodyFixture f = new BodyFixture(new Rectangle(0.5,0.5));
 			g.addFixture(f);
 			
-			switch(i){
-				case 0:
-					g.getTransform().setTranslation(0, -21);
-					break;
-				case 1:
-					g.getTransform().setTranslation(2, -21);
-					break;
-				case 2:
-					g.getTransform().setTranslation(1, -20);
-					break;
-			}
+			g.getTransform().setTranslation(duplicate.oPos[i]);
+			oPos[i] = new Vector2(duplicate.oPos[i]);
 			
 			g.setMass(MassType.NORMAL);
 			
-			double frict = duplicate.gameObjects[i].getFixture(0).getFriction();
+			double frict = duplicate.nodes[i].getFixture(0).getFriction();
 			if(frict < 1)
 				frict = 1;
 			if(frict > 3)
@@ -147,21 +138,32 @@ public class Creature implements Comparable{
 			g.color = new Color((int) ((frict-1)/2d*255),0,0);
 			f.setFriction(frict);
 		}
-		muscles = new Muscle[3];
-		muscles[0] = new Muscle(gameObjects[0],gameObjects[1],duplicate.muscles[0], false);
-		muscles[1] = new Muscle(gameObjects[1],gameObjects[2],duplicate.muscles[1], false);
-		muscles[2] = new Muscle(gameObjects[2],gameObjects[0],duplicate.muscles[2], false);
+		int i = 0;
+		ArrayList<NodeSet> nodesDone = new ArrayList<NodeSet>();
+		for(GameObject n : nodes)
+			for(GameObject on: nodes){
+				if(on != n){
+					if(!nodesDone.contains(new NodeSet(n,on))){
+						Muscle m = new Muscle(n, on, duplicate.muscles[i], false);
+						m.setDistance(m.minLength);
+						muscles[i] = m;
+						nodesDone.add(new NodeSet(n,on));
+						i++;
+					}
+				}
+			}
 	}
 
 	public void reset(){
 		this.maxDistance = this.getPos().x;
-		gameObjects[0].getTransform().setTranslation(0, -21);
-		gameObjects[1].getTransform().setTranslation(2, -21);
-		gameObjects[2].getTransform().setTranslation(1, -20);
-		for(GameObject g : gameObjects){
+		for(int i = 0; i < nodes.length; i++){
+			GameObject g = nodes[i];
 			g.setAngularVelocity(0);
 			g.setLinearVelocity(0,0);
+			g.getTransform().setTranslation(oPos[i]);
 		}
+		for(Muscle m : muscles)
+			m.setDistance(m.minLength);
 	}
 
 	public void focus(JFrame frame) {
@@ -172,13 +174,13 @@ public class Creature implements Comparable{
 	
 	public Vector2 getPos(){
 		Vector2 ret = new Vector2();
-		for(GameObject g : gameObjects)
+		for(GameObject g : nodes)
 			ret = ret.add(g.getTransform().getTranslation());
-		return new Vector2(ret.x/gameObjects.length, ret.y/gameObjects.length);
+		return new Vector2(ret.x/nodes.length, ret.y/nodes.length);
 	}
 	
 	public void update(){
-		for(GameObject g : gameObjects)
+		for(GameObject g : nodes)
 			g.getTransform().setRotation(0);
 	}
 

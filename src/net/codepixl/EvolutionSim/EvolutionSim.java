@@ -101,7 +101,7 @@ public class EvolutionSim extends JPanel{
 	private void update(){
 		double rDelta = deltaTime;
 		deltaTime = 1d/60d;
-		timeMultiplier = 1;
+		timeMultiplier = 100;
 		for(int i = 0; i < mainCreature.muscles.length; i++)
 			mainCreature.muscles[i].update();
 		floor.getTransform().setTranslation(mainCreature.getPos().x, -22);
@@ -154,7 +154,7 @@ public class EvolutionSim extends JPanel{
 	}
 	
 	public void addCreature(Creature c){
-		for(GameObject g : c.gameObjects)
+		for(GameObject g : c.nodes)
 			addObject(g);
 		for(Muscle j : c.muscles)
 			addJoint(j);
@@ -162,7 +162,7 @@ public class EvolutionSim extends JPanel{
 	}
 	
 	public void unloadCreature(Creature c){
-		for(GameObject g : c.gameObjects)
+		for(GameObject g : c.nodes)
 			removeObject(g);
 		for(Muscle j : c.muscles)
 			removeJoint(j);
