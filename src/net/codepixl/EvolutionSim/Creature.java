@@ -23,7 +23,9 @@ public class Creature implements Comparable{
 	
 	public static int cID = 0;
 	
-	public int numNodes = 10;
+	public static int defNodes = 4;
+	
+	public int numNodes = defNodes;
 
 	public Vector2[] oPos;
 	

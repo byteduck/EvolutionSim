@@ -10,8 +10,12 @@ import java.util.Hashtable;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 
 import org.dyn4j.dynamics.Step;
@@ -27,6 +31,7 @@ public class EvolutionSim extends JPanel{
 	ArrayList<Joint> joints = new ArrayList<Joint>();
 	ArrayList<Creature> creatures = new ArrayList<Creature>();
 	ArrayList<Creature> cGen = new ArrayList<Creature>();
+	ArrayList<InfoPoint> history = new ArrayList<InfoPoint>();
 	int cCreature = 0;
 	GameObject floor;
 	static double deltaTime = 0;
@@ -35,12 +40,26 @@ public class EvolutionSim extends JPanel{
 	Creature mainCreature, prevCreature;
 	double timeMultiplier = 1;
 	public JFrame frame;
+	JLabel genLabel;
+	JLabel infoLabel;
+	int generation = 1;
+	double bestDist = 0;
+	JFrame graphFrame;
 	
 	public static void main(String[] args){
 		new EvolutionSim();
 	}
 	
+	/*
+	 * This is very messy code. All that's happening here is setting up the JFrame and the gameloop.
+	 */
 	public EvolutionSim(){
+		String in = JOptionPane.showInputDialog(null, "Number of nodes?", "Evolution Sim", JOptionPane.QUESTION_MESSAGE);
+		try{
+			Creature.defNodes = Integer.parseInt(in);
+		}catch(NumberFormatException e){
+			return;
+		}
 		frame = new JFrame("Evolution Simulator");
 		this.setPreferredSize(new Dimension(700,700));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -48,21 +67,35 @@ public class EvolutionSim extends JPanel{
 		frame.add(this, BorderLayout.CENTER);
 		frame.pack();
 		frame.setLocationRelativeTo(null);
+		frame.setLocation(frame.getX()-350, frame.getY());
+		
+		graphFrame = new GraphFrame(history);
 		
 		JPanel controls = new JPanel();
-		JSlider slider = new JSlider(0,9,0);
+		JSlider slider = new JSlider(0,7,0);
 		slider.setMajorTickSpacing(1);
 		slider.setPaintTicks(true);
 		Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
-		for(int i = 1; i < 10; i+=2)
-			labelTable.put(i, new JLabel(""+(int)(Math.pow(2, i))));
+		for(int i = 1; i < 8; i+=2)
+			labelTable.put(i, new JLabel("x"+(int)(Math.pow(2, i))));
 		
 		slider.setLabelTable( labelTable );
 		slider.setPaintLabels(true);
 		slider.addChangeListener((ChangeEvent e)->{
 			timeMultiplier = Math.pow(2, slider.getValue());
 		});
-		controls.add(slider);
+		controls.setLayout(new BorderLayout());
+		controls.add(slider, BorderLayout.CENTER);
+		genLabel = new JLabel("<html><center>Generation 0000<br>Creature 00</center></html>");
+		Border border = genLabel.getBorder();
+		Border margin = new EmptyBorder(10,10,10,10);
+		genLabel.setBorder(new CompoundBorder(border, margin));
+		controls.add(genLabel, BorderLayout.WEST);
+		infoLabel = new JLabel("<html><center>Timer: 00<br>Distance: +000.0</center></html>");
+		border = infoLabel.getBorder();
+		margin = new EmptyBorder(10,10,10,10);
+		infoLabel.setBorder(new CompoundBorder(border, margin));
+		controls.add(infoLabel, BorderLayout.EAST);
 		frame.add(controls, BorderLayout.SOUTH);
 		
 		world = new World();
@@ -70,7 +103,7 @@ public class EvolutionSim extends JPanel{
 		mainCreature = new Creature(this);
 		addCreature(mainCreature);
 		cGen.add(mainCreature);
-		for(int i = 1; i < 30; i++)
+		for(int i = 1; i < 10; i++)
 			cGen.add(new Creature(this));
 		
 		floor = new GameObject();
@@ -113,7 +146,7 @@ public class EvolutionSim extends JPanel{
 	
 	private void update(){
 		double rDelta = deltaTime;
-		deltaTime = 1d/30d;
+		deltaTime = 1d/60d;
 		for(int i = 0; i < mainCreature.muscles.length; i++)
 			mainCreature.muscles[i].update();
 		floor.getTransform().setTranslation(mainCreature.getPos().x, -22);
@@ -129,8 +162,11 @@ public class EvolutionSim extends JPanel{
 				mainCreature = cGen.get(cCreature);
 				addCreature(mainCreature);
 			}else{
+				history.add(new InfoPoint(cGen));
+				graphFrame.repaint();
 				Collections.sort(cGen);
 				System.out.println("Best: "+cGen.get(0).maxDistance+" Worst: "+cGen.get(cGen.size()-1).maxDistance);
+				bestDist = Math.round(cGen.get(0).maxDistance*10)/10d;
 				for(int i = cGen.size()/2; i < cGen.size(); i++)
 					cGen.set(i, new Creature(cGen.get(i-cGen.size()/2)));
 				for(int i = 0; i < cGen.size()/2; i++)
@@ -138,9 +174,12 @@ public class EvolutionSim extends JPanel{
 				cCreature = 0;
 				mainCreature = cGen.get(0);
 				addCreature(mainCreature);
+				generation++;
 			}
 			timer = 0;
 		}
+		infoLabel.setText("<html><center>Timer: "+Math.round(timer)+"<br>Distance: "+Math.round(mainCreature.getPos().x*10)/10d+"</center></html>");
+		genLabel.setText("<html><center>Generation "+generation+"<br>Creature: "+(cCreature+1)+"<br>Last gen best: "+bestDist+"</center></html>");
 		deltaTime = rDelta;
 	}
 
