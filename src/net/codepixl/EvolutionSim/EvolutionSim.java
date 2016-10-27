@@ -1,13 +1,18 @@
 package net.codepixl.EvolutionSim;
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Hashtable;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
 
 import org.dyn4j.dynamics.Step;
 import org.dyn4j.dynamics.StepListener;
@@ -24,31 +29,48 @@ public class EvolutionSim extends JPanel{
 	ArrayList<Creature> cGen = new ArrayList<Creature>();
 	int cCreature = 0;
 	GameObject floor;
-	GameObject marker;
 	static double deltaTime = 0;
 	long ltime = 0;
 	double timer = 0;
 	Creature mainCreature, prevCreature;
 	double timeMultiplier = 1;
-	int times = 0;
+	public JFrame frame;
 	
 	public static void main(String[] args){
 		new EvolutionSim();
 	}
 	
 	public EvolutionSim(){
-		JFrame frame = new JFrame("Evolution Simulator");
-		this.setPreferredSize(new Dimension(1000,1000));
+		frame = new JFrame("Evolution Simulator");
+		this.setPreferredSize(new Dimension(700,700));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setContentPane(this);
+		frame.setLayout(new BorderLayout());
+		frame.add(this, BorderLayout.CENTER);
 		frame.pack();
 		frame.setLocationRelativeTo(null);
+		
+		JPanel controls = new JPanel();
+		JSlider slider = new JSlider(0,9,0);
+		slider.setMajorTickSpacing(1);
+		slider.setPaintTicks(true);
+		Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
+		for(int i = 1; i < 10; i+=2)
+			labelTable.put(i, new JLabel(""+(int)(Math.pow(2, i))));
+		
+		slider.setLabelTable( labelTable );
+		slider.setPaintLabels(true);
+		slider.addChangeListener((ChangeEvent e)->{
+			timeMultiplier = Math.pow(2, slider.getValue());
+		});
+		controls.add(slider);
+		frame.add(controls, BorderLayout.SOUTH);
+		
 		world = new World();
 		
 		mainCreature = new Creature(this);
 		addCreature(mainCreature);
 		cGen.add(mainCreature);
-		for(int i = 1; i < 10; i++)
+		for(int i = 1; i < 30; i++)
 			cGen.add(new Creature(this));
 		
 		floor = new GameObject();
@@ -56,52 +78,42 @@ public class EvolutionSim extends JPanel{
 		floor.setMass(MassType.INFINITE);
 		floor.translate(23d/2d, -22);
 		addObject(floor);
-		
-		marker = new GameObject();
-		marker.addFixture(new Rectangle(1,1));
-		marker.translate(23/2d, -10);
-		addObject(marker);
 
 		frame.setVisible(true);
 		
 		world.addListener(new StepListener(){
 			@Override
-			public void begin(Step arg0, World arg1) {
-				
-			}
+			public void begin(Step arg0, World arg1) {}
 			@Override
-			public void end(Step arg0, World arg1) {
-				
-			}
+			public void end(Step arg0, World arg1) {}
 			@Override
-			public void postSolve(Step arg0, World arg1){
-				update();
-				
-			}
+			public void postSolve(Step arg0, World arg1){update();}
 			@Override
-			public void updatePerformed(Step arg0, World arg1) {
-				// TODO Auto-generated method stub
-			}
+			public void updatePerformed(Step arg0, World arg1) {}
 		});
-		
+		double aDelta = 0;
+		double aDeltaTimer = 0;
 		while(true){
-			times = 0;
 			ltime = System.nanoTime();
 			
-			mainCreature.focus(frame);
-			
-			world.update(deltaTime);
+			aDeltaTimer+=deltaTime;
 			
 			repaint();
+			mainCreature.focus(frame);
 			
-			deltaTime = ((System.nanoTime()-ltime)/1000000000d)*timeMultiplier;
+			if(aDeltaTimer >= deltaTime){
+				world.update(deltaTime);
+				aDeltaTimer = 0;
+				deltaTime = aDelta*timeMultiplier;
+			}
+			
+			aDelta = ((System.nanoTime()-ltime)/1000000000d);
 		}
 	}
 	
 	private void update(){
 		double rDelta = deltaTime;
-		deltaTime = 1d/60d;
-		timeMultiplier = 100;
+		deltaTime = 1d/30d;
 		for(int i = 0; i < mainCreature.muscles.length; i++)
 			mainCreature.muscles[i].update();
 		floor.getTransform().setTranslation(mainCreature.getPos().x, -22);
@@ -123,10 +135,9 @@ public class EvolutionSim extends JPanel{
 					cGen.set(i, new Creature(cGen.get(i-cGen.size()/2)));
 				for(int i = 0; i < cGen.size()/2; i++)
 					cGen.set(i, new Creature(cGen.get(i), false));
-				cCreature = 1;
+				cCreature = 0;
 				mainCreature = cGen.get(0);
 				addCreature(mainCreature);
-				timeMultiplier = 1;
 			}
 			timer = 0;
 		}
@@ -176,11 +187,20 @@ public class EvolutionSim extends JPanel{
 		a.drawString("position: "+Math.round(mainCreature.getPos().x*10)/10d+","+Math.round(mainCreature.getPos().y*10)/10d+" timer: "+Math.round(timer)+" id: "+mainCreature.id+" creature: "+cCreature, 0, 10);
 		AffineTransform yFlip = AffineTransform.getScaleInstance(1, -1);
 		Graphics2DRenderer.applyTranslations(g);
+		drawGrid(g);
 		g.transform(yFlip);
 		for(int i = 0; i < joints.size(); i++)
 			renderJoint(joints.get(i),g);
 		for(int i = 0; i < gameObjects.size(); i++)
 			gameObjects.get(i).render(g);
+	}
+
+	private void drawGrid(Graphics2D g) {
+		for(int x = (int) (-40*GameObject.SCALE); x < 40*GameObject.SCALE; x+=GameObject.SCALE){
+			for(int y = (int) (-10*GameObject.SCALE); y < 30*GameObject.SCALE; y+=GameObject.SCALE){
+				g.drawRect(x, y, (int)GameObject.SCALE, (int)GameObject.SCALE);
+			}
+		}
 	}
 
 	public void renderJoint(Joint j, Graphics2D g){

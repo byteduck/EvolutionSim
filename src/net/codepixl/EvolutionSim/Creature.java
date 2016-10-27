@@ -23,7 +23,7 @@ public class Creature implements Comparable{
 	
 	public static int cID = 0;
 	
-	public int numNodes = 4;
+	public int numNodes = 10;
 
 	public Vector2[] oPos;
 	
@@ -39,9 +39,9 @@ public class Creature implements Comparable{
 		for(int i = 0; i < nodes.length; i++){
 			GameObject g = new GameObject();
 			BodyFixture fix = new BodyFixture(new Rectangle(0.5,0.5));
-			double frict = r.nextDouble()*2+1;
+			double frict = r.nextDouble()*10;
 			fix.setFriction(frict);
-			g.color = new Color((int) ((frict-1)/2d*255),0,0);
+			g.color = new Color((int) ((frict)/10d*255),0,0);
 			g.addFixture(fix);
 			Vector2 trans = new Vector2(r.nextDouble()*2-1, (r.nextDouble()*2-1)-19.5);
 			g.getTransform().setTranslation(trans);
@@ -83,12 +83,11 @@ public class Creature implements Comparable{
 			double frict = mutateFrom.nodes[i].getFixture(0).getFriction();
 			if(rand == 0)
 				frict+=r.nextDouble()-0.5;
-			if(frict < 1)
-				frict = 1;
-			if(frict > 3)
-				g.color = new Color(255,0,0);
-			else
-				g.color = new Color((int) ((frict-1)/2d*255),0,0);
+			if(frict < 0)
+				frict = 0;
+			if(frict > 10)
+				frict = 10;
+			g.color = new Color((int) ((frict)/10d*255),0,0);
 			f.setFriction(frict);
 			g.addFixture(f);
 			
@@ -131,11 +130,11 @@ public class Creature implements Comparable{
 			g.setMass(MassType.NORMAL);
 			
 			double frict = duplicate.nodes[i].getFixture(0).getFriction();
-			if(frict < 1)
-				frict = 1;
-			if(frict > 3)
-				frict = 3;
-			g.color = new Color((int) ((frict-1)/2d*255),0,0);
+			if(frict < 0)
+				frict = 0;
+			if(frict > 10)
+				frict = 10;
+			g.color = new Color((int) ((frict)/10d*255),0,0);
 			f.setFriction(frict);
 		}
 		int i = 0;
@@ -169,7 +168,7 @@ public class Creature implements Comparable{
 	public void focus(JFrame frame) {
 		Vector2 pos = getPos();
 		Graphics2DRenderer.xTranslate = -pos.x+(frame.getWidth()/GameObject.SCALE/2);
-		Graphics2DRenderer.yTranslate = pos.y+(frame.getWidth()/GameObject.SCALE/2);
+		Graphics2DRenderer.yTranslate = pos.y+(frame.getWidth()/GameObject.SCALE/2)+3;
 	}
 	
 	public Vector2 getPos(){
