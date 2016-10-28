@@ -66,17 +66,18 @@ public class EvolutionSim extends JPanel{
 		graphFrame = new GraphFrame(history);
 		
 		JPanel controls = new JPanel();
-		JSlider slider = new JSlider(0,7,0);
+		JSlider slider = new JSlider(0,11,0);
 		slider.setMajorTickSpacing(1);
 		slider.setPaintTicks(true);
 		Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
-		for(int i = 1; i < 8; i+=2)
+		for(int i = 1; i < 12; i+=2)
 			labelTable.put(i, new JLabel("x"+(int)(Math.pow(2, i))));
 		
 		slider.setLabelTable( labelTable );
 		slider.setPaintLabels(true);
 		slider.addChangeListener((ChangeEvent e)->{
 			timeMultiplier = Math.pow(2, slider.getValue());
+			world.setAccumulatedTime(0);
 		});
 		controls.setLayout(new BorderLayout());
 		controls.add(slider, BorderLayout.CENTER);
@@ -94,11 +95,11 @@ public class EvolutionSim extends JPanel{
 		
 		world = new World();
 		
-		mainCreature = new Creature(this);
+		mainCreature = new Creature();
 		addCreature(mainCreature);
 		cGen.add(mainCreature);
-		for(int i = 1; i < 30; i++)
-			cGen.add(new Creature(this));
+		for(int i = 1; i < 10; i++)
+			cGen.add(new Creature());
 		
 		floor = new GameObject();
 		floor.addFixture(new Rectangle(23,1));
@@ -119,28 +120,21 @@ public class EvolutionSim extends JPanel{
 			public void updatePerformed(Step arg0, World arg1) {}
 		});
 		double aDelta = 0;
-		double aDeltaTimer = 0;
 		while(true){
 			ltime = System.nanoTime();
 			
-			aDeltaTimer+=deltaTime;
-			
 			repaint();
 			mainCreature.focus(frame);
+			world.update(deltaTime,1);
 			
-			if(aDeltaTimer >= deltaTime){
-				world.update(deltaTime);
-				aDeltaTimer = 0;
-				deltaTime = aDelta*timeMultiplier;
-			}
-			
+			deltaTime = aDelta*timeMultiplier;
 			aDelta = ((System.nanoTime()-ltime)/1000000000d);
 		}
 	}
 	
 	private void update(){
 		double rDelta = deltaTime;
-		deltaTime = 1d/60d;
+		deltaTime = world.getSettings().getStepFrequency();
 		for(int i = 0; i < mainCreature.muscles.length; i++)
 			mainCreature.muscles[i].update();
 		floor.getTransform().setTranslation(mainCreature.getPos().x, -22);
@@ -172,8 +166,6 @@ public class EvolutionSim extends JPanel{
 			}
 			timer = 0;
 		}
-		infoLabel.setText("<html><center>Timer: "+Math.round(timer)+"<br>Distance: "+Math.round(mainCreature.getPos().x*10)/10d+"</center></html>");
-		genLabel.setText("<html><center>Generation "+generation+"<br>Creature: "+(cCreature+1)+"<br>Last gen best: "+bestDist+"</center></html>");
 		deltaTime = rDelta;
 	}
 
@@ -230,6 +222,8 @@ public class EvolutionSim extends JPanel{
 		}catch(NullPointerException e){
 			//Since paint is run on the AWT thread, nullpointerexceptions will be thrown when in the middle of changing the creatures around.
 		}
+		infoLabel.setText("<html><center>Timer: "+Math.round(timer)+"<br>Distance: "+Math.round(mainCreature.getPos().x*10)/10d+"</center></html>");
+		genLabel.setText("<html><center>Generation "+generation+"<br>Creature: "+(cCreature+1)+"<br>Last gen best: "+bestDist+"</center></html>");
 	}
 
 	private void drawGrid(Graphics2D g) {

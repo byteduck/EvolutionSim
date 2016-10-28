@@ -108,5 +108,18 @@ public class Muscle extends DistanceJoint{
 	public double getBodyDistance(){
 		return Math.sqrt(Math.pow(getBody1().getTransform().getTranslationX()-getBody2().getTransform().getTranslationX(), 2)+Math.pow(getBody1().getTransform().getTranslationY()-getBody2().getTransform().getTranslationY(), 2));
 	}
+	
+	@Override
+	public boolean equals(Object o){
+		if(o instanceof Muscle){
+			Muscle m = (Muscle)o;
+			return 
+					m.maxLength == maxLength &&
+					m.minLength == minLength &&
+					m.cSpeed == cSpeed &&
+					m.eSpeed == eSpeed;
+		}
+		return false;
+	}
 
 }

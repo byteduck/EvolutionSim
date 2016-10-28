@@ -16,8 +16,6 @@ public class Creature implements Comparable{
 	
 	public GameObject[] nodes;
 	public Muscle[] muscles;
-	public World world;
-	public EvolutionSim sim;
 	public int id;
 	public double maxDistance;
 	
@@ -27,8 +25,7 @@ public class Creature implements Comparable{
 
 	public Vector2[] oPos;
 	
-	public Creature(EvolutionSim sim){
-		this.sim = sim;
+	public Creature(){
 		this.id = cID;
 		cID++;
 		Random r = new Random();
@@ -45,21 +42,22 @@ public class Creature implements Comparable{
 			g.addFixture(fix);
 			Vector2 trans = new Vector2(r.nextDouble()*2-1, (r.nextDouble()*2-1)-19.5);
 			g.getTransform().setTranslation(trans);
-			oPos[i] = trans;
+			oPos[i] = new Vector2(trans);
 			g.setMass(MassType.NORMAL);
 			nodes[i] = g;
 		}
-		int i = 0;
 		ArrayList<NodeSet> nodesDone = new ArrayList<NodeSet>();
-		for(GameObject n : nodes)
-			for(GameObject on: nodes){
+		int num = 0;
+		for(int j = 0; j < nodes.length; j++)
+			for(int i = 0; i < nodes.length; i++){
+				GameObject n = nodes[j], on = nodes[i];
 				if(on != n){
 					if(!nodesDone.contains(new NodeSet(n,on))){
-						Muscle m = new Muscle(n, on);
+						Muscle m = new Muscle(n,on);
 						m.setDistance(m.minLength);
-						muscles[i] = m;
+						muscles[num] = m;
 						nodesDone.add(new NodeSet(n,on));
-						i++;
+						num++;
 					}
 				}
 			}
@@ -115,31 +113,32 @@ public class Creature implements Comparable{
 					shift = new Vector2(r.nextDouble()-0.5, r.nextDouble()-0.5);
 				else
 					shift = new Vector2();
-				g.getTransform().setTranslation(mutateFrom.oPos[i].add(shift));
+				g.getTransform().setTranslation(new Vector2(mutateFrom.oPos[i]).add(shift));
 				oPos[i] = new Vector2(g.getTransform().getTranslation());
 			}else{
 				Vector2 trans = new Vector2(r.nextDouble()*2-1, (r.nextDouble()*2-1)-19.5);
 				g.getTransform().setTranslation(trans);
-				oPos[i] = trans;
+				oPos[i] = new Vector2(trans);
 			}
 			
 			g.setMass(MassType.NORMAL);
 		}
-		int i = 0;
 		ArrayList<NodeSet> nodesDone = new ArrayList<NodeSet>();
-		for(GameObject n : nodes)
-			for(GameObject on: nodes){
+		int num = 0;
+		for(int j = 0; j < nodes.length; j++)
+			for(int i = 0; i < nodes.length; i++){
+				GameObject n = nodes[j], on = nodes[i];
 				if(on != n){
 					if(!nodesDone.contains(new NodeSet(n,on))){
 						Muscle m;
-						if(i < mutateFrom.muscles.length)
-							m = new Muscle(n, on, mutateFrom.muscles[i]);
+						if(num < mutateFrom.muscles.length)
+							m = new Muscle(n, on, mutateFrom.muscles[num]);
 						else
 							m = new Muscle(n,on);
 						m.setDistance(m.minLength);
-						muscles[i] = m;
+						muscles[num] = m;
 						nodesDone.add(new NodeSet(n,on));
-						i++;
+						num++;
 					}
 				}
 			}
@@ -158,7 +157,7 @@ public class Creature implements Comparable{
 			BodyFixture f = new BodyFixture(new Rectangle(0.5,0.5));
 			g.addFixture(f);
 			
-			g.getTransform().setTranslation(duplicate.oPos[i]);
+			g.getTransform().setTranslation(new Vector2(duplicate.oPos[i]));
 			oPos[i] = new Vector2(duplicate.oPos[i]);
 			
 			g.setMass(MassType.NORMAL);
@@ -171,17 +170,18 @@ public class Creature implements Comparable{
 			g.color = new Color((int) ((frict)/10d*255),0,0);
 			f.setFriction(frict);
 		}
-		int i = 0;
 		ArrayList<NodeSet> nodesDone = new ArrayList<NodeSet>();
-		for(GameObject n : nodes)
-			for(GameObject on: nodes){
+		int num = 0;
+		for(int j = 0; j < nodes.length; j++)
+			for(int i = 0; i < nodes.length; i++){
+				GameObject n = nodes[j], on = nodes[i];
 				if(on != n){
 					if(!nodesDone.contains(new NodeSet(n,on))){
-						Muscle m = new Muscle(n, on, duplicate.muscles[i], false);
+						Muscle m = new Muscle(n, on, duplicate.muscles[num], false);
 						m.setDistance(m.minLength);
-						muscles[i] = m;
+						muscles[num] = m;
 						nodesDone.add(new NodeSet(n,on));
-						i++;
+						num++;
 					}
 				}
 			}
@@ -193,7 +193,7 @@ public class Creature implements Comparable{
 			GameObject g = nodes[i];
 			g.setAngularVelocity(0);
 			g.setLinearVelocity(0,0);
-			g.getTransform().setTranslation(oPos[i]);
+			g.getTransform().setTranslation(new Vector2(oPos[i]));
 		}
 		for(Muscle m : muscles)
 			m.setDistance(m.minLength);
@@ -223,6 +223,27 @@ public class Creature implements Comparable{
 			return new Double(((Creature)o).maxDistance).compareTo(maxDistance);
 		else
 			return -1;
+	}
+	
+	@Override
+	public boolean equals(Object o){
+		if(o instanceof Creature){
+			Creature c = (Creature)o;
+			if(c.nodes.length != nodes.length || c.muscles.length != muscles.length || c.numNodes != numNodes)
+				return false;
+			boolean flag = true;
+			for(int i = 0; i < nodes.length; i++)
+				if(nodes[i].getFixture(0).getFriction() != c.nodes[i].getFixture(0).getFriction() || !nodes[i].getTransform().getTranslation().equals(c.nodes[i].getTransform().getTranslation()))
+					flag = false;
+			for(int i = 0; i < muscles.length; i++)
+				if(!muscles[i].equals(c.muscles[i]))
+					flag = false;
+			for(int i = 0; i < oPos.length; i++)
+				if(!oPos[i].equals(c.oPos[i]))
+					flag = false;
+			return flag;
+		}
+		return false;
 	}
 	
 }
