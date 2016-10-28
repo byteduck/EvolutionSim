@@ -23,9 +23,7 @@ public class Creature implements Comparable{
 	
 	public static int cID = 0;
 	
-	public static int defNodes = 4;
-	
-	public int numNodes = defNodes;
+	public int numNodes = new Random().nextInt(2)+3;
 
 	public Vector2[] oPos;
 	
@@ -71,18 +69,36 @@ public class Creature implements Comparable{
 		Random r = new Random();
 		this.id = cID;
 		cID++;
-		nodes = new GameObject[mutateFrom.numNodes];
-		muscles = new Muscle[mutateFrom.muscles.length];
-		oPos = new Vector2[mutateFrom.oPos.length];
+		//Mutate another node, 2% chance to add, 2% chance to remove
+		int nodesToAdd = 0;
+		switch(r.nextInt(100)){
+			case 0:
+				nodesToAdd = 1;
+				break;
+			case 1:
+				nodesToAdd = -1;
+				break;
+		}
+		
+		numNodes = mutateFrom.numNodes+nodesToAdd;
+		if(numNodes < 1)
+			numNodes = 1;
+		nodes = new GameObject[mutateFrom.numNodes+nodesToAdd];
+		muscles = new Muscle[numNodes+numNodes*(numNodes-3)/2];
+		oPos = new Vector2[mutateFrom.oPos.length+nodesToAdd];
+		
 		for(int i = 0; i < nodes.length; i++){
 			nodes[i] = new GameObject();
 			GameObject g = nodes[i];
-			GameObject mt = mutateFrom.nodes[i];
 			BodyFixture f = new BodyFixture(new Rectangle(0.5,0.5));
 			
 			//Mutate friction 10% chance
 			int rand = r.nextInt(10);
-			double frict = mutateFrom.nodes[i].getFixture(0).getFriction();
+			double frict;
+			if(i < mutateFrom.numNodes)
+				frict = mutateFrom.nodes[i].getFixture(0).getFriction();
+			else
+				frict = r.nextDouble()*10;
 			if(rand == 0)
 				frict+=r.nextDouble()-0.5;
 			if(frict < 0)
@@ -93,8 +109,19 @@ public class Creature implements Comparable{
 			f.setFriction(frict);
 			g.addFixture(f);
 			
-			g.getTransform().setTranslation(mutateFrom.oPos[i]);
-			oPos[i] = new Vector2(mutateFrom.oPos[i]);
+			if(i < mutateFrom.numNodes){
+				Vector2 shift;
+				if(r.nextInt(10) < 1)
+					shift = new Vector2(r.nextDouble()-0.5, r.nextDouble()-0.5);
+				else
+					shift = new Vector2();
+				g.getTransform().setTranslation(mutateFrom.oPos[i].add(shift));
+				oPos[i] = new Vector2(g.getTransform().getTranslation());
+			}else{
+				Vector2 trans = new Vector2(r.nextDouble()*2-1, (r.nextDouble()*2-1)-19.5);
+				g.getTransform().setTranslation(trans);
+				oPos[i] = trans;
+			}
 			
 			g.setMass(MassType.NORMAL);
 		}
@@ -104,7 +131,11 @@ public class Creature implements Comparable{
 			for(GameObject on: nodes){
 				if(on != n){
 					if(!nodesDone.contains(new NodeSet(n,on))){
-						Muscle m = new Muscle(n, on, mutateFrom.muscles[i]);
+						Muscle m;
+						if(i < mutateFrom.muscles.length)
+							m = new Muscle(n, on, mutateFrom.muscles[i]);
+						else
+							m = new Muscle(n,on);
 						m.setDistance(m.minLength);
 						muscles[i] = m;
 						nodesDone.add(new NodeSet(n,on));
@@ -117,6 +148,7 @@ public class Creature implements Comparable{
 	public Creature(Creature duplicate, boolean b) {
 		this.id = cID;
 		cID++;
+		numNodes = duplicate.numNodes;
 		nodes = new GameObject[duplicate.nodes.length];
 		muscles = new Muscle[duplicate.muscles.length];
 		oPos = new Vector2[duplicate.oPos.length];

@@ -54,12 +54,6 @@ public class EvolutionSim extends JPanel{
 	 * This is very messy code. All that's happening here is setting up the JFrame and the gameloop.
 	 */
 	public EvolutionSim(){
-		String in = JOptionPane.showInputDialog(null, "Number of nodes?", "Evolution Sim", JOptionPane.QUESTION_MESSAGE);
-		try{
-			Creature.defNodes = Integer.parseInt(in);
-		}catch(NumberFormatException e){
-			return;
-		}
 		frame = new JFrame("Evolution Simulator");
 		this.setPreferredSize(new Dimension(700,700));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -103,7 +97,7 @@ public class EvolutionSim extends JPanel{
 		mainCreature = new Creature(this);
 		addCreature(mainCreature);
 		cGen.add(mainCreature);
-		for(int i = 1; i < 10; i++)
+		for(int i = 1; i < 30; i++)
 			cGen.add(new Creature(this));
 		
 		floor = new GameObject();
@@ -228,10 +222,14 @@ public class EvolutionSim extends JPanel{
 		Graphics2DRenderer.applyTranslations(g);
 		drawGrid(g);
 		g.transform(yFlip);
-		for(int i = 0; i < joints.size(); i++)
-			renderJoint(joints.get(i),g);
-		for(int i = 0; i < gameObjects.size(); i++)
-			gameObjects.get(i).render(g);
+		try{
+			for(int i = 0; i < joints.size(); i++)
+				renderJoint(joints.get(i),g);
+			for(int i = 0; i < gameObjects.size(); i++)
+				gameObjects.get(i).render(g);
+		}catch(NullPointerException e){
+			//Since paint is run on the AWT thread, nullpointerexceptions will be thrown when in the middle of changing the creatures around.
+		}
 	}
 
 	private void drawGrid(Graphics2D g) {
