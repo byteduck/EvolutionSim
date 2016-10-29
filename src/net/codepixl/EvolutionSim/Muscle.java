@@ -79,6 +79,18 @@ public class Muscle extends DistanceJoint{
 		setDistance(2);
 	}
 
+	public Muscle(GameObject body1, GameObject body2, String input){
+		super(body1, body2, body1.getTransform().getTranslation(), body2.getTransform().getTranslation());
+		String[] params = input.split(",");
+		maxLength = Double.parseDouble(params[0]);
+		minLength = Double.parseDouble(params[1]);
+		cSpeed = Double.parseDouble(params[2]);
+		eSpeed = Double.parseDouble(params[3]);
+		setFrequency(4);
+		setDampingRatio(0.1);
+		setDistance(2);
+	}
+
 	public void render(Graphics2D g){
 		Stroke bef = g.getStroke();
 		float stroke = (float)(-this.getBodyDistance()+maxLength)*10;
@@ -120,6 +132,10 @@ public class Muscle extends DistanceJoint{
 					m.eSpeed == eSpeed;
 		}
 		return false;
+	}
+
+	public String getInfo() {
+		return maxLength+","+minLength+","+cSpeed+","+eSpeed;
 	}
 
 }

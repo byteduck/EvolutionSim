@@ -1,13 +1,14 @@
 package net.codepixl.EvolutionSim;
 
 import java.awt.Color;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Scanner;
 
 import javax.swing.JFrame;
 
 import org.dyn4j.dynamics.BodyFixture;
-import org.dyn4j.dynamics.World;
 import org.dyn4j.geometry.MassType;
 import org.dyn4j.geometry.Rectangle;
 import org.dyn4j.geometry.Vector2;
@@ -186,6 +187,52 @@ public class Creature implements Comparable{
 				}
 			}
 	}
+	
+	public Creature(String s){
+		this.id = cID;
+		cID++;
+		Scanner in = new Scanner(s);
+		nodes = new GameObject[Integer.parseInt(in.nextLine())];
+		oPos = new Vector2[nodes.length];
+		numNodes = nodes.length;
+		for(int i = 0; i < nodes.length; i++){
+			String[] nodeInfo = in.nextLine().split(",");
+			nodes[i] = new GameObject();
+			GameObject g = nodes[i];
+			BodyFixture f = new BodyFixture(new Rectangle(0.5,0.5));
+			g.addFixture(f);
+			
+			g.getTransform().setTranslation(new Vector2(Double.parseDouble(nodeInfo[1]), Double.parseDouble(nodeInfo[2])));
+			oPos[i] = new Vector2(g.getTransform().getTranslation());
+			
+			g.setMass(MassType.NORMAL);
+			
+			double frict = Double.parseDouble(nodeInfo[0]);
+			if(frict < 0)
+				frict = 0;
+			if(frict > 10)
+				frict = 10;
+			g.color = new Color((int) ((frict)/10d*255),0,0);
+			f.setFriction(frict);
+		}
+		muscles = new Muscle[Integer.parseInt(in.nextLine())];
+		ArrayList<NodeSet> nodesDone = new ArrayList<NodeSet>();
+		int num = 0;
+		for(int j = 0; j < nodes.length; j++)
+			for(int i = 0; i < nodes.length; i++){
+				GameObject n = nodes[j], on = nodes[i];
+				if(on != n){
+					if(!nodesDone.contains(new NodeSet(n,on))){
+						Muscle m = new Muscle(n, on, in.nextLine());
+						m.setDistance(m.minLength);
+						muscles[num] = m;
+						nodesDone.add(new NodeSet(n,on));
+						num++;
+					}
+				}
+			}
+		in.close();
+	}
 
 	public void reset(){
 		this.maxDistance = this.getPos().x;
@@ -244,6 +291,18 @@ public class Creature implements Comparable{
 			return flag;
 		}
 		return false;
+	}
+	
+	public String getInfo(){
+		String ret = nodes.length+"";
+		for(int i = 0; i < nodes.length; i++){
+			GameObject g = nodes[i];
+			ret+="\n"+g.getFixture(0).getFriction()+","+oPos[i].x+","+oPos[i].y;
+		}
+		ret+="\n"+muscles.length;
+		for(Muscle m : muscles)
+			ret+="\n"+m.getInfo();
+		return ret;
 	}
 	
 }
