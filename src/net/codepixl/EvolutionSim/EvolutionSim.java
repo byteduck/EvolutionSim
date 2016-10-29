@@ -193,7 +193,8 @@ public class EvolutionSim extends JPanel{
 		if(createCreatures){
 			mainCreature = new Creature();
 			addCreature(mainCreature);
-			for(int i = 2; i < 20; i++)
+			cGen.add(mainCreature);
+			for(int i = 1; i < 20; i++)
 				cGen.add(new Creature());
 		}else{
 			mainCreature = null;
